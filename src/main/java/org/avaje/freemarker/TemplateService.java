@@ -75,7 +75,14 @@ public class TemplateService {
     
     Template template;
     try {
-      template = configuration.getTemplate(templateName+viewSuffix);
+      
+      if (!templateName.endsWith(viewSuffix)) {
+        // append the default viewSuffix, typically ".html"
+        templateName += viewSuffix;
+      }
+      
+      template = configuration.getTemplate(templateName);
+      
     } catch (IOException e) {
       throw new IOException("Error loading template: "+templateName, e);
     }
