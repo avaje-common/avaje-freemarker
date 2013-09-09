@@ -38,10 +38,13 @@ public class TemplateService {
    */
   @Inject
   public TemplateService(WebApplicationContext webAppContext, TemplateConfig config) {
+    this(webAppContext.getServletContext(), config);
+  }
+  
+  public TemplateService(ServletContext servletContext, TemplateConfig config) {
       
-    this.servletContext = webAppContext.getServletContext();
+    this.servletContext = servletContext;
     this.viewSuffix = config.getViewSuffix();
-
 
     ConfigurationBuilder builder = new ConfigurationBuilder();
     

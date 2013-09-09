@@ -162,6 +162,16 @@ public class RawTemplateInherit {
 	  int startPos = parentContent.indexOf(layoutHeadTag);
 	  if (startPos > 0) {
 	    pg = StringHelper.replaceString(parentContent, layoutHeadTag, headTagContent, startPos);
+	  } else {
+	    int endHeadPos = parentContent.indexOf("</head>");
+	    if (endHeadPos > -1) {
+	      // insert just prior to the closing head tag
+	      StringBuilder temp = new StringBuilder(pg.length()+headTagContent.length()+2);
+	      temp.append(pg.substring(0, endHeadPos));
+	      temp.append(headTagContent);
+	      temp.append(pg.substring(endHeadPos)); 
+	      pg = temp.toString();
+	    }
 	  }
 		
 		pg = StringHelper.replaceString(pg, layoutBodyTag, bodyContent);

@@ -13,6 +13,8 @@ public class ConfigurationBuilder {
   private ObjectWrapper wrapper = ObjectWrapper.DEFAULT_WRAPPER;
 
   private String encoding = "UTF-8";
+  
+  private String numberFormat = "0.######";
 
   private boolean localizedLookup;
   
@@ -30,6 +32,7 @@ public class ConfigurationBuilder {
       config.setLocalizedLookup(localizedLookup);
       config.setDefaultEncoding(encoding);
       config.setTemplateUpdateDelay(templateUpdateDelay);
+      config.setNumberFormat(numberFormat);
 
       if (useExceptionHandler) {
         config.setTemplateExceptionHandler(TemplateExceptionHandler.HTML_DEBUG_HANDLER);

@@ -32,6 +32,10 @@ public class IOUtil {
 	public static String readAscii(InputStream in) throws IOException {
 		return EncodeUtil.bytesToAscii(read(in));
 	}
+	
+	public static String readUTF8(InputStream in) throws IOException {
+    return EncodeUtil.bytesToUtf8(read(in));
+  }
 
 	/**
 	 * Reads the entire contents of the specified input stream and returns them
