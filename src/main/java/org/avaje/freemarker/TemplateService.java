@@ -31,18 +31,21 @@ public class TemplateService {
     
   private final Configuration configuration;
   
+  private final TemplateNotFoundBuilder templateNotFoundBuilder;
+  
   private final String viewSuffix;
   
   /**
    * Constructs the service with appropriate template loading.
    */
   @Inject
-  public TemplateService(WebApplicationContext webAppContext, TemplateConfig config) {
-    this(webAppContext.getServletContext(), config);
+  public TemplateService(WebApplicationContext webAppContext, TemplateConfig config, TemplateNotFoundBuilder notFoundBuilder) {
+    this(webAppContext.getServletContext(), config, notFoundBuilder);
   }
   
-  public TemplateService(ServletContext servletContext, TemplateConfig config) {
+  public TemplateService(ServletContext servletContext, TemplateConfig config, TemplateNotFoundBuilder templateNotFoundBuilder) {
       
+    this.templateNotFoundBuilder = templateNotFoundBuilder;
     this.servletContext = servletContext;
     this.viewSuffix = config.getViewSuffix();
 
@@ -70,6 +73,9 @@ public class TemplateService {
     return InheritLayoutTemplateLoader.createWebappLoader(servletContext, templatePath);
   }
 
+  public ModelView buildNotFound(String templateName) {
+    return templateNotFoundBuilder.buildNotFound(templateName);
+  }
 
   /**
    * Render the template with the given model to the writer.

@@ -13,6 +13,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
 
@@ -55,15 +57,28 @@ public class ModelViewJaxrsProducer implements MessageBodyWriter<ModelView> {
   public void writeTo(ModelView modelView, Class<?> cls, Type type, Annotation[] annotations, MediaType mediaType,
       MultivaluedMap<String, Object> httpHeaders, OutputStream os) throws IOException, WebApplicationException {
 
-    Writer writer = new BufferedWriter(new OutputStreamWriter(os));
-
     try {
+
+      Writer writer = new BufferedWriter(new OutputStreamWriter(os));
+
       templateService.render(modelView.getView(), modelView.getModel(), writer);
+      writer.flush();
+
     } catch (IOException e) {
+      log.error("Template not found: "+e.getMessage());
+      
+      ModelView notFoundView = templateService.buildNotFound(modelView.getView());
+      
+      Response response = Response.status(Status.NOT_FOUND)
+          .entity(notFoundView).type(MediaType.TEXT_HTML).build();
+      
+      throw new WebApplicationException(response);
+      
+    } catch (Exception e) {
       log.error("Error rendering template", e);
+      throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
     }
    
-    writer.flush();
   }
 
 }
