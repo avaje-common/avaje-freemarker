@@ -4,18 +4,24 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 
+/**
+ * Raw string manipulation of HTML templates handling layout inheritance and dealing with HEAD
+ * sections, TITLE etc.
+ */
 public class RawTemplateInherit {
 
 	private static final String _END_TAG = ">";
 	private static final String _HEAD_END = "</head>";
 	private static final String _HEAD = "<head>";
 	private final RawTemplateSource templateSource;
+	private final ContentFilter contentFilter;
 	
 	private String layoutHeadTag = "<meta id=\"layout-head\"/>";
 	private String layoutBodyTag = "<div id=\"layout-body\"></div>";
 
-	public RawTemplateInherit(RawTemplateSource templateSource) {
+	public RawTemplateInherit(RawTemplateSource templateSource, ContentFilter contentFilter) {
 		this.templateSource = templateSource;
+		this.contentFilter = contentFilter;
 	}
 
 	public Reader getReader(String templateName, String encoding) throws IOException {
@@ -30,7 +36,12 @@ public class RawTemplateInherit {
 		}
 
 		// detect and merge layout inheritance
-		return mergeInheritedLayout(encoding, templateName, pageContent);
+		String result = mergeInheritedLayout(encoding, templateName, pageContent);
+		if (contentFilter != null) {
+		  return contentFilter.filter(result);
+		} else {
+		  return result;
+		}
 	}
 
 	private String mergeInheritedLayout(String encoding, String templateName, String pageContent) throws IOException {

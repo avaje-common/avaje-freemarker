@@ -33,7 +33,7 @@ public class TemplateLoaderFactoryTests {
     
     TemplateLoader baseLoader = new FileTemplateLoader(new File("src/test/resources/templates"));
     
-    InheritLayoutTemplateLoader layoutLoader = new InheritLayoutTemplateLoader(baseLoader);
+    InheritLayoutTemplateLoader layoutLoader = new InheritLayoutTemplateLoader(baseLoader, null);
 
     Object mainLayoutPageSource = layoutLoader.findTemplateSource("layout/mainLayout.html");
     Assert.assertNotNull(mainLayoutPageSource);

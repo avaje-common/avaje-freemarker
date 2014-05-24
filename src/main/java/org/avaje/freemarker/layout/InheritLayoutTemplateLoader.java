@@ -26,20 +26,29 @@ public final class InheritLayoutTemplateLoader implements TemplateLoader {
    * Create a WebappTemplateLoader loader and wrap it with inheritance layout handling.
    */
   public static TemplateLoader createWebappLoader(ServletContext servletContext, String templatePath) {
-
-    return wrap(new WebappTemplateLoader(servletContext, templatePath));
+    return createWebappLoader(servletContext, templatePath, null);
+  }
+  
+  /**
+   * Create a TemplateLoader additionally specifying a ContentFilter. 
+   */
+  public static TemplateLoader createWebappLoader(ServletContext servletContext, String templatePath, ContentFilter contentFilter) {
+    return wrap(new WebappTemplateLoader(servletContext, templatePath), contentFilter);
   }
   
   /**
    * Wrap a TemplateLoader with inheritance layout handling.
    */
-  public static TemplateLoader wrap(TemplateLoader baseLoader) {
-    return new InheritLayoutTemplateLoader(baseLoader);
+  public static TemplateLoader wrap(TemplateLoader baseLoader, ContentFilter contentFilter) {
+    return new InheritLayoutTemplateLoader(baseLoader, contentFilter);
   }
   
-  public InheritLayoutTemplateLoader(TemplateLoader wrapped) {
+  /**
+   * Create wrapping a TemplateLoader.
+   */
+  public InheritLayoutTemplateLoader(TemplateLoader wrapped, ContentFilter contentFilter) {
     this.wrapped = wrapped;
-    this.inheritHandler = new RawTemplateInherit(new Source(wrapped));
+    this.inheritHandler = new RawTemplateInherit(new Source(wrapped), contentFilter);
   }
 
   public Object findTemplateSource(String name) throws IOException {
