@@ -1,16 +1,17 @@
 package org.avaje.freemarker;
 
+import freemarker.cache.FileTemplateLoader;
+import freemarker.cache.TemplateLoader;
+import org.avaje.freemarker.layout.InheritLayoutTemplateLoader;
+import org.avaje.freemarker.util.IOUtil;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 
-import org.avaje.freemarker.layout.InheritLayoutTemplateLoader;
-import org.avaje.freemarker.util.IOUtil;
-import org.junit.Assert;
-import org.junit.Test;
-
-import freemarker.cache.FileTemplateLoader;
-import freemarker.cache.TemplateLoader;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class TemplateLoaderFactoryTests {
 
@@ -20,11 +21,11 @@ public class TemplateLoaderFactoryTests {
     TemplateLoader templateLoader = new FileTemplateLoader(new File("src/test/resources/templates"));
     
     Object templateSource = templateLoader.findTemplateSource("test.html");
-    Assert.assertNotNull(templateSource);
+    assertNotNull(templateSource);
 
     Reader reader = templateLoader.getReader(templateSource, "UTF-8");
     String content = IOUtil.read(reader);
-    Assert.assertTrue(content.indexOf("<p>Some test content</p>") > -1);
+    assertTrue(content.indexOf("<p>Some test content</p>") > -1);
   }
   
   @Test
@@ -36,16 +37,34 @@ public class TemplateLoaderFactoryTests {
     InheritLayoutTemplateLoader layoutLoader = new InheritLayoutTemplateLoader(baseLoader, null);
 
     Object mainLayoutPageSource = layoutLoader.findTemplateSource("layout/mainLayout.html");
-    Assert.assertNotNull(mainLayoutPageSource);
+    assertNotNull(mainLayoutPageSource);
 
     Object somePageSource = layoutLoader.findTemplateSource("somePage.html");
-    Assert.assertNotNull(somePageSource);
+    assertNotNull(somePageSource);
 
     Reader reader = layoutLoader.getReader(somePageSource, "UTF-8");
     String content = IOUtil.read(reader);
     
-    Assert.assertTrue(content.indexOf("<div>layout before main content</div>") > -1);
-    Assert.assertTrue(content.indexOf("<div>Some Page content</div>") > -1);
+    assertTrue(content.indexOf("<div>layout before main content</div>") > -1);
+    assertTrue(content.indexOf("<div>Some Page content</div>") > -1);
     
+  }
+
+  @Test
+  public void nestedInheritance() throws IOException {
+
+
+    TemplateLoader baseLoader = new FileTemplateLoader(new File("src/test/resources/templates"));
+
+    InheritLayoutTemplateLoader layoutLoader = new InheritLayoutTemplateLoader(baseLoader, null);
+
+    Object somePageSource = layoutLoader.findTemplateSource("withNestedLayout.html");
+    assertNotNull(somePageSource);
+
+    Reader reader = layoutLoader.getReader(somePageSource, "UTF-8");
+    String content = IOUtil.read(reader);
+
+    assertTrue(content.indexOf("<div>layout before main content</div>") > -1);
+    assertTrue(content.indexOf("<div>Some Page content</div>") > -1);
   }
 }
