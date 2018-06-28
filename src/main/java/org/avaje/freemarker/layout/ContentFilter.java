@@ -8,6 +8,6 @@ public interface ContentFilter {
   /**
    * Apply a filter to the content.
    */
-  public String filter(String content);
+  String filter(String content);
   
 }

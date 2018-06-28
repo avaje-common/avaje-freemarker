@@ -1,0 +1,16 @@
+<html>
+<head>
+<title>Nested</title>
+    <meta name="base meta before"/>
+  <meta name="layout" content="layout/nestedLayoutNoMetaLayout.html"/>
+  <meta name="base meta after"/>
+  <template name="meta-content">
+    <a href="foo">metContent</a>
+  </template>
+  <template id="menuNav"><#include "/_layout/_docs_nav_mapping.ftl"></template>
+  <meta name="bread1" content="Mapping" href="/docs/mapping"/>
+</head>
+<body onload="">
+<div>my nested page content</div>
+</body>
+</html>

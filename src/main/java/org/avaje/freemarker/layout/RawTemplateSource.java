@@ -4,6 +4,6 @@ import java.io.IOException;
 
 public interface RawTemplateSource {
 
-	public String getSource(String templateName, String encoding) throws IOException;
+	String getSource(String templateName, String encoding) throws IOException;
 	
 }

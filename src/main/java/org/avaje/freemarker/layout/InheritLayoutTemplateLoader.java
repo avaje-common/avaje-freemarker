@@ -12,9 +12,6 @@ import freemarker.cache.WebappTemplateLoader;
 
 /**
  * Simple layout inheritance wrapper for a TemplateLoader.
- * <p>
- * 
- * </p>
  */
 public final class InheritLayoutTemplateLoader implements TemplateLoader {
   
