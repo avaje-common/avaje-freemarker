@@ -20,7 +20,7 @@ public class TemplateLoaderFactoryTests {
   public void testLoadFromFile() throws IOException {
 
     TemplateLoader templateLoader = new FileTemplateLoader(new File("src/test/resources/templates"));
-    
+
     Object templateSource = templateLoader.findTemplateSource("test.html");
     assertNotNull(templateSource);
 
@@ -29,10 +29,9 @@ public class TemplateLoaderFactoryTests {
 
     assertThat(content).contains("<p>Some test content</p>");
   }
-  
+
   @Test
   public void testInheritance() throws IOException {
-
 
     InheritLayoutTemplateLoader layoutLoader = createLoader();
 
@@ -44,7 +43,7 @@ public class TemplateLoaderFactoryTests {
 
     Reader reader = layoutLoader.getReader(somePageSource, "UTF-8");
     String content = IOUtil.read(reader);
-    
+
     assertThat(content).contains("<div>layout before main content</div>");
     assertThat(content).contains("<div>Some Page content</div>");
   }
@@ -56,7 +55,17 @@ public class TemplateLoaderFactoryTests {
     assertExpectedContent(content);
   }
 
+  @Test
+  public void nestedInheritanceWithBread() throws IOException {
 
+    String content = read("index.ftl");
+//    assertExpectedContent(content);
+
+    assertThat(content).contains("<nav><#include \"/_layout/_docs_nav_mapping.ftl\"></nav>");
+//    assertThat(content).contains("<nav><#include \"/_layout/_docs_nav_mapping.ftl\"></nav>");
+//
+//    assertThat(content).contains("<h1 id=\"bread\"><a href=\"/docs\">Docs</a> / Mapping</h1>");
+  }
 
   @Test
   public void nestedInheritanceNoMetaLayout() throws IOException {

@@ -46,28 +46,18 @@ class RawTemplateInherit {
 	}
 
 	private String mergeInheritedLayout(String encoding, PageContent page) throws IOException {
-
-		if (page.noHeadLayout()) {
-			log.info("done inheritance");
-
+		if (!page.hasParentLayout()) {
 			return page.content();
 		}
-
 		return mergeContent(encoding, page);
 	}
 
 	private String mergeContent(String encoding, PageContent page) throws IOException {
-	  
 		// there is page inheritance
-
-		page.metaLayoutEnd();
-		page.readBody();
-
-		String parentLayout = page.readHeadMeta();
+		String parentLayout = page.getParentLayout();
 		log.info("merge parentLayout {}", parentLayout);
 
 		String parentContent = templateSource.getSource(parentLayout, encoding);
-
 		PageContent parentPage = new PageContent(parentLayout, parentContent);
 
 		parentPage.mergeChild(page);

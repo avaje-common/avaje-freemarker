@@ -10,86 +10,141 @@ class PageContent {
 
 	private static final Logger log = LoggerFactory.getLogger(PageContent.class);
 
-
 	private static final String _HEAD = "<head>";
 	private static final String _END_TAG = ">";
 	private static final String _HEAD_END = "</head>";
 	private static final String layoutHeadTag = "<meta id=\"layout-head\"/>";
 	private static final String layoutBodyTag = "<div id=\"layout-body\"></div>";
 	private static final String metaLayoutBodyTag = "<div id=\"meta-content\"></div>";
-
 	private static final String breadStartTag = "<meta name=\"bread";
 
 	private final String templateName;
 	private Map<String, String> variables = new LinkedHashMap<>();
 	private Map<String, Crumb> bread = new LinkedHashMap<>();
 
-	private String content;
-	private String headContent;
-	private String titleTagContent;
-	private String bodyTagContent;
-	private String bodyContent;
-
-	private int headStart;
 	private int headEnd;
-	private int metaLayoutStart;
-	private int metaEnd;
-
+	private int metaLayoutStart = -1;
+	private int metaLayoutEnd;
 	private int titleStart;
 	private int titleEnd;
 
+	private String content;
+	private String headContent;
+	private String titleTagContent;
+	private String bodyTagAttributes;
+	private String bodyContent;
 	private String parentLayout;
-	private String headTagContent;
+	//private String headTagContent;
 	private String metaContent;
 
 	PageContent(String templateName, String content) {
 		this.templateName = templateName;
 		this.content = content;
+		parse();
 	}
 
-	boolean noHeadLayout() {
-		headStart = content.indexOf(_HEAD);
+	boolean hasParentLayout() {
+		return metaLayoutStart != -1;
+	}
+
+	public String getParentLayout() {
+		return parentLayout;
+	}
+
+	private void parse() {
+		int headStart = content.indexOf(_HEAD);
 		if (headStart == -1) {
-			return true;
+			return;
 		}
 		headEnd = content.indexOf(_HEAD_END, headStart + _HEAD.length());
 		if (headEnd == -1) {
 			throw new RuntimeException("'" + _HEAD_END + "' tag not found after position [" + headStart + "]");
 		}
-
-		// just search the head section for <meta name=\"layout\"
 		headContent = content.substring(headStart + 6, headEnd);
 		metaLayoutStart = headContent.indexOf("<meta name=\"layout\"");
-		if (metaLayoutStart == -1) {
-			// no page inheritance for this page
-			log.info("no page inheritance ... {}", templateName);
+		parseTitle();
+		if (metaLayoutStart > -1) {
+			metaLayoutEnd = headContent.indexOf(_END_TAG, metaLayoutStart + 13);
+			if (metaLayoutEnd == -1) {
+				throw new RuntimeException("'>' not found for <meta name=\"content\" at pos[" + metaLayoutStart + 13 + "]");
+			}
+			parseParentLayout();
+			parseBody();
+		}
+	}
 
-			return true;
+	private void parseBody() {
+
+		int bodyTagStart = content.indexOf("<body", headEnd + 7);
+		if (bodyTagStart == -1) {
+			throw new RuntimeException("'<body' tag not found after position [" + headEnd + 7 + "]");
+		}
+		int bodyTagEnd = content.indexOf(_END_TAG, bodyTagStart + 5);
+		if (bodyTagEnd == -1) {
+			throw new RuntimeException("'>' character not found after '<body' position [" + bodyTagStart + 5 + "]");
+		}
+		int bodyEnd = content.lastIndexOf("</body>");
+		if (bodyEnd == -1) {
+			throw new RuntimeException("'</body>' tag not found after position [" + bodyTagEnd + "]");
 		}
 
-		return false;
+		// get the body tag content
+		bodyTagAttributes = content.substring(bodyTagStart + 5, bodyTagEnd);
+		bodyContent = content.substring(bodyTagEnd + 1, bodyEnd);
+		removeTitleElement();
+	}
+
+	private void parseParentLayout() {
+		int tnStart = headContent.indexOf("content=", metaLayoutStart);
+		if (tnStart == -1) {
+			throw new RuntimeException("No 'content=' attribute in <meta name=\"layout\" ... element?");
+		}
+		String layout = headContent.substring(tnStart + 8, metaLayoutEnd);
+		if (layout.endsWith("/")) {
+			layout = layout.substring(0, layout.length() - 1);
+		}
+		layout = StringHelper.removeChars(layout, new char[]{'"', '\''});
+		parentLayout = layout.trim();
+		remoteMetaLayoutElement();
+	}
+
+	private void remoteMetaLayoutElement() {
+		headContent = headContent.substring(0, metaLayoutStart) + headContent.substring(metaLayoutEnd + 1);
+	}
+
+	private void removeTitleElement() {
+		if (titleStart > -1) {
+			headContent = headContent.substring(0, titleStart) + headContent.substring(titleEnd + 8);
+		}
 	}
 
 	String content() {
-		log.info("content render ...");
+		contentReplaceMetaContent();
+		contentReplaceVariables();
+		contentReplaceBreadCrumbs();
+		return content;
+	}
 
+	private void contentReplaceMetaContent() {
 		if (metaContent != null) {
-			log.info("content render ... metaContent");
 			content = StringHelper.replaceString(content, metaLayoutBodyTag, metaContent);
 		}
+	}
+
+	private void contentReplaceVariables() {
 		if (!variables.isEmpty()) {
-			log.info("content render ... variables {}", variables);
 			for (Map.Entry<String, String> entry : variables.entrySet()) {
 				String varId = entry.getKey();
 				String varContent = entry.getValue();
 				content = StringHelper.replaceString(content, "$" + varId, varContent);
 			}
 		}
+	}
 
+	private void contentReplaceBreadCrumbs() {
 		int size = bread.size();
 		if (size == 0) {
 			content = StringHelper.replaceString(content, "$breadcrumb", "");
-
 		} else {
 			log.info("content render ... crumbs {}", bread);
 			StringBuilder crumbs = new StringBuilder();
@@ -104,23 +159,11 @@ class PageContent {
 					crumbs.append(crumbContent);
 				}
 			}
-
-			String crumConte = crumbs.toString();
-			log.info("content render ... crumConte {}", crumConte);
-			content = StringHelper.replaceString(content, "$breadcrumb", crumConte);
+			content = StringHelper.replaceString(content, "$breadcrumb", crumbs.toString());
 		}
-
-		return content;
 	}
 
-	public void metaLayoutEnd() {
-
-		log.info("read metaLayoutEnd ... {}", templateName);
-
-		metaEnd = headContent.indexOf(_END_TAG, metaLayoutStart + 13);
-		if (metaEnd == -1) {
-			throw new RuntimeException("'>' not found for <meta name=\"content\" at pos[" + metaLayoutStart + 13 + "]");
-		}
+	private void parseTitle() {
 		titleStart = headContent.indexOf("<title>");
 		if (titleStart > -1) {
 			titleEnd = headContent.indexOf("</title>", titleStart);
@@ -131,11 +174,10 @@ class PageContent {
 				titleTagContent = headContent.substring(titleStart + 7, titleEnd);
 			}
 		}
-
-		findMetaContent();
+		parseMetaContent();
 	}
 
-	private void findMetaContent() {
+	private void parseMetaContent() {
 		int metaContentStart = headContent.indexOf("<template name=\"meta-content\">");
 		if (metaContentStart > -1) {
 			int metaContentEnd = headContent.indexOf("</template>", metaContentStart + 32);
@@ -143,17 +185,13 @@ class PageContent {
 				throw new RuntimeException("'</template>' not found for <template name=\"meta-content\" at pos[" + metaContentStart + 32 + "]");
 			}
 			metaContent = headContent.substring(metaContentStart + 32, metaContentEnd).trim();
-
-			StringBuilder sb = new StringBuilder(headContent.length());
-			sb.append(headContent.substring(0, metaContentStart));
-			sb.append(headContent.substring(metaContentEnd + 11));
-			headContent = sb.toString();
+			headContent = headContent.substring(0, metaContentStart) + headContent.substring(metaContentEnd + 11);
 		}
-		findVariables();
-		findBreadcrumbs();
+		parseVariables();
+		parseBreadcrumbs();
 	}
 
-	private void findVariables() {
+	private void parseVariables() {
 		int start = headContent.indexOf("<template id=\"");
 		while (start > -1) {
 			start = readVariable(start);
@@ -173,20 +211,17 @@ class PageContent {
 		String varContent = headContent.substring(pos + 2, end).trim();
 
 		variables.putIfAbsent(varId, varContent);
-
-
-		log.info("put variable ... {} {}", varId, varContent);
+		log.debug("put variable ... {} {}", varId, varContent);
 
 		StringBuilder sb = new StringBuilder(headContent.length());
-		sb.append(headContent.substring(0, start));
+		sb.append(headContent, 0, start);
 		sb.append(headContent.substring(end + 11));
 		headContent = sb.toString();
 
 		return headContent.indexOf("<template id=\"", start);
 	}
 
-	private void findBreadcrumbs() {
-		log.info("findBreadcrumbs ...");
+	private void parseBreadcrumbs() {
 		int start = headContent.indexOf(breadStartTag);
 		while (start > -1) {
 			start = readBread(start);
@@ -208,11 +243,10 @@ class PageContent {
 		Crumb crumb = new Crumb(name, desc, href);
 		bread.putIfAbsent(name, crumb);
 
-		log.info("put Breadcrumbs ...{}", crumb);
+		log.debug("put Breadcrumbs ...{}", crumb);
 
 		StringBuilder sb = new StringBuilder(headContent.length());
-		sb.append(headContent.substring(0, start));
-		sb.append(headContent.substring(end + 2));
+		sb.append(headContent, 0, start).append(headContent.substring(end + 2));
 		headContent = sb.toString();
 
 		return headContent.indexOf(breadStartTag, start);
@@ -225,133 +259,57 @@ class PageContent {
 		return breadContent.substring(start + attr.length(), end);
 	}
 
-	public void readBody() {
-
-		int bodyTagStart = content.indexOf("<body", headEnd + 7);
-		if (bodyTagStart == -1) {
-			throw new RuntimeException("'<body' tag not found after position [" + headEnd + 7 + "]");
-		}
-		int bodyTagEnd = content.indexOf(_END_TAG, bodyTagStart + 5);
-		if (bodyTagEnd == -1) {
-			throw new RuntimeException("'>' character not found after '<body' position [" + bodyTagStart + 5 + "]");
-		}
-		int bodyEnd = content.lastIndexOf("</body>", content.length());
-		if (bodyEnd == -1) {
-			throw new RuntimeException("'</body>' tag not found after position [" + bodyTagEnd + "]");
-		}
-
-		// get the body tag content
-		bodyTagContent = content.substring(bodyTagStart + 5, bodyTagEnd);
-		bodyContent = content.substring(bodyTagEnd + 1, bodyEnd);
-	}
-
-	public String readHeadMeta() {
-		// get head content (minus title, minus meta layout)
-		headTagContent = getHeadTagContent(headContent);
-		parentLayout = getMetaTagContent(headContent);
-		return parentLayout;
-	}
-
-
-	private String getMetaTagContent(String headContent) {//}, int metaStart, int metaEnd) {
-
-		int tnStart = headContent.indexOf("content=", metaLayoutStart);
-		if (tnStart == -1) {
-			throw new RuntimeException("No 'content=' attribute in <meta name=\"layout\" ... element?");
-		}
-		String t = headContent.substring(tnStart + 8, metaEnd);
-		if (t.endsWith("/")) {
-			t = t.substring(0, t.length() - 1);
-		}
-
-		char[] removeChars = {'"', '\''};
-		t = StringHelper.removeChars(t, removeChars);
-		return t.trim();
-	}
-
-	private String getHeadTagContent(String headContent) {//}, int metaStart, int metaEnd, int titleEnd, int titleStart) {
-
-		StringBuilder sb = new StringBuilder(headContent.length());
-		if (titleStart < metaLayoutStart) {
-			if (titleStart > -1) {
-				sb.append(headContent.substring(0, titleStart));
-				sb.append(headContent.substring(titleEnd + 8, metaLayoutStart));
-				sb.append(headContent.substring(metaEnd + 1, headContent.length()));
-			} else {
-				sb.append(headContent.substring(0, metaLayoutStart));
-				sb.append(headContent.substring(metaEnd + 1, headContent.length()));
-			}
-		} else {
-			sb.append(headContent.substring(0, metaLayoutStart));
-			sb.append(headContent.substring(metaEnd + 1, titleStart));
-			sb.append(headContent.substring(titleEnd + 8, headContent.length()));
-		}
-
-		return sb.toString().trim();
-	}
-
 	public void mergeChild(PageContent child) {
 
 		log.info("merge child {} parent {}", child.templateName, templateName);
-
-		this.variables = child.variables;
-		this.bread = child.bread;
+		this.variables.putAll(child.variables);
+		this.bread.putAll(child.bread);
 		this.metaContent = child.metaContent;
-		mergeHeadAndBody(child);
-		mergeBodyTagAttributes(child);
-		mergeTitleTag(child.titleTagContent);
-	}
-
-	private void mergeTitleTag(String titleTagContent) {
-
-		if (titleTagContent != null && titleTagContent.trim().length() > 0) {
-			int parentTitleStart = content.indexOf("<title>");
-			if (parentTitleStart == -1) {
-				throw new RuntimeException("'<title>' tag not found int parent page [" + templateName + "]");
-			}
-			int parentTitleEnd = content.indexOf("</title>", parentTitleStart);
-			if (parentTitleEnd == -1) {
-				throw new RuntimeException("'</title>' tag not found int parent page [" + templateName + "]");
-			}
-
-			StringBuilder b = new StringBuilder(content.length() + 150);
-			b.append(content.substring(0, parentTitleStart));
-			b.append("<title>");
-			b.append(titleTagContent);
-			b.append(content.substring(parentTitleEnd, content.length()));
-
-			content = b.toString();
+		if (hasParentLayout()) {
+			mergeLayout(child);
+		} else {
+			mergeContentFinal(child);
 		}
 	}
 
-	private void mergeBodyTagAttributes(PageContent child) {
-
-		if (child.bodyTagContent == null || child.bodyTagContent.trim().isEmpty()) {
-			return;
-		}
-
-		String attr = child.bodyTagContent.trim();
-		int parentBodyTagStart = content.indexOf("<body");
-		if (parentBodyTagStart == -1) {
-			throw new RuntimeException("No '<body' found in page " + templateName);
-		}
-		int parentBodyTagEnd = content.indexOf(_END_TAG, parentBodyTagStart);
-		if (parentBodyTagEnd == -1) {
-			throw new RuntimeException("No '>' found for '<body' in page " + templateName);
-		}
-		StringBuilder b = new StringBuilder(content.length() + attr.length() + 10);
-		b.append(content.substring(0, parentBodyTagStart));
-		b.append("<body ");
-		b.append(attr);
-		b.append(_END_TAG);
-		b.append(content.substring(parentBodyTagEnd + 1, content.length()));
-
-		content = b.toString();
+	private void mergeLayout(PageContent child) {
+		mergeLayoutHeadBody(child);
+		mergeLayoutBodyTagAttributes(child);
+		mergeLayoutTitle(child);
 	}
 
-	private void mergeHeadAndBody(PageContent child) {
+	private void mergeContentFinal(PageContent child) {
+		mergeContentHeadBody(child);
+		mergeContentBodyTagAttributes(child);
+		mergeContentTitle(child.titleTagContent);
+	}
 
-		String childHead = child.getHeadTagContent();
+	private void mergeLayoutTitle(PageContent child) {
+		if (child.titleTagContent != null && !child.titleTagContent.isEmpty()) {
+			this.titleTagContent = child.titleTagContent;
+		}
+	}
+
+	private void mergeLayoutBodyTagAttributes(PageContent child) {
+		if (child.bodyTagAttributes != null && !child.bodyTagAttributes.trim().isEmpty()) {
+			this.bodyTagAttributes = child.bodyTagAttributes;
+		}
+	}
+
+	private void mergeLayoutHeadBody(PageContent child) {
+		String childHead = child.getHeadContent();
+		if (childHead != null) {
+			headContent = StringHelper.replaceString(headContent, layoutHeadTag, childHead);
+		}
+		final String childBody = child.getBodyContent();
+		if (childBody != null) {
+			bodyContent = StringHelper.replaceString(bodyContent, layoutBodyTag, childBody);
+		}
+	}
+
+	private void mergeContentHeadBody(PageContent child) {
+
+		String childHead = child.getHeadContent();
 
 		String pg = content;
 		int startPos = content.indexOf(layoutHeadTag);
@@ -371,18 +329,59 @@ class PageContent {
 		}
 
 		// replace body
-		pg = StringHelper.replaceString(pg, layoutBodyTag, child.getBodyContent());
+		content = StringHelper.replaceString(pg, layoutBodyTag, child.getBodyContent());
+	}
 
-		this.content = pg;
+	private void mergeContentTitle(String titleTagContent) {
+		if (titleTagContent != null && titleTagContent.trim().length() > 0) {
+			int parentTitleStart = content.indexOf("<title>");
+			if (parentTitleStart == -1) {
+				throw new RuntimeException("'<title>' tag not found in parent page [" + templateName + "]");
+			}
+			int parentTitleEnd = content.indexOf("</title>", parentTitleStart);
+			if (parentTitleEnd == -1) {
+				throw new RuntimeException("'</title>' tag not found in parent page [" + templateName + "]");
+			}
+
+			StringBuilder buffer = new StringBuilder(content.length() + 150);
+			buffer.append(content, 0, parentTitleStart);
+			buffer.append("<title>");
+			buffer.append(titleTagContent);
+			buffer.append(content.substring(parentTitleEnd));
+			content = buffer.toString();
+		}
+	}
+
+	private void mergeContentBodyTagAttributes(PageContent child) {
+		if (child.bodyTagAttributes == null || child.bodyTagAttributes.trim().isEmpty()) {
+			return;
+		}
+
+		String attr = child.bodyTagAttributes.trim();
+		int parentBodyTagStart = content.indexOf("<body");
+		if (parentBodyTagStart == -1) {
+			throw new RuntimeException("No '<body' found in page " + templateName);
+		}
+		int parentBodyTagEnd = content.indexOf(_END_TAG, parentBodyTagStart);
+		if (parentBodyTagEnd == -1) {
+			throw new RuntimeException("No '>' found for '<body' in page " + templateName);
+		}
+		StringBuilder b = new StringBuilder(content.length() + attr.length() + 10);
+		b.append(content, 0, parentBodyTagStart);
+		b.append("<body ");
+		b.append(attr);
+		b.append(_END_TAG);
+		b.append(content.substring(parentBodyTagEnd + 1));
+
+		content = b.toString();
 	}
 
 	private String getBodyContent() {
 		return bodyContent;
 	}
 
-	private String getHeadTagContent() {
-
-		return headTagContent;
+	private String getHeadContent() {
+		return headContent;
 	}
 
 	private static class Crumb {
