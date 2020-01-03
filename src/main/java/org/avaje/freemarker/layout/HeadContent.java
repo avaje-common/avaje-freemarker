@@ -189,33 +189,7 @@ class HeadContent implements Tags {
   }
 
   private void parseVariables() {
-    int start = content.indexOf("<template id=\"");
-    while (start > -1) {
-      start = readVariable(start);
-    }
-  }
-
-  private int readVariable(int start) {
-    int pos = content.indexOf("\">", start + 14);
-    if (pos == -1) {
-      throw new RuntimeException("No closing '\">' for <template id= at pos[" + start + "]");
-    }
-    int end = content.indexOf("</template>", pos);
-    if (end == -1) {
-      throw new RuntimeException("'</template>' not found for <template id= at pos[" + pos + "]");
-    }
-    String varId = content.substring(start + 14, pos).trim();
-    String varContent = content.substring(pos + 2, end).trim();
-
-    variables.putIfAbsent(varId, varContent);
-    log.debug("put variable ... {} {}", varId, varContent);
-
-    StringBuilder sb = new StringBuilder(content.length());
-    sb.append(content, 0, start);
-    sb.append(content.substring(end + 11));
-    content = sb.toString();
-
-    return content.indexOf("<template id=\"", start);
+    content = MetaVariableReader.readAll(content, variables);
   }
 
   private String getAttribute(String attribute, String breadContent) {
