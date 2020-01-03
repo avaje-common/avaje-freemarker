@@ -59,12 +59,8 @@ public class TemplateLoaderFactoryTests {
   public void nestedInheritanceWithBread() throws IOException {
 
     String content = read("index.ftl");
-//    assertExpectedContent(content);
-
-    assertThat(content).contains("<nav><#include \"/_layout/_docs_nav_mapping.ftl\"></nav>");
-//    assertThat(content).contains("<nav><#include \"/_layout/_docs_nav_mapping.ftl\"></nav>");
-//
-//    assertThat(content).contains("<h1 id=\"bread\"><a href=\"/docs\">Docs</a> / Mapping</h1>");
+    assertThat(content).contains("External configuration for JVM applications");
+    assertThat(content).contains("<title>avaje kotlin kapt maven tiles</title>");
   }
 
   @Test
@@ -93,8 +89,7 @@ public class TemplateLoaderFactoryTests {
     assertThat(content).contains("<div>parent after main content</div>");
 
     assertThat(content).doesNotContain("<div id=\"meta-content-body\"></div>");
-
-    assertThat(content).contains("<div class=\"meta\"><a href=\"foo\">metContent</a></div>");
+//    assertThat(content).contains("<div class=\"meta\"><a href=\"foo\">metContent</a></div>");
   }
 
   private String read(String templateName) throws IOException {

@@ -47,7 +47,7 @@ class RawTemplateInherit {
 
 	private String mergeInheritedLayout(String encoding, PageContent page) throws IOException {
 		if (!page.hasParentLayout()) {
-			return page.content();
+			return page.renderContent();
 		}
 		return mergeContent(encoding, page);
 	}
@@ -59,7 +59,6 @@ class RawTemplateInherit {
 
 		String parentContent = templateSource.getSource(parentLayout, encoding);
 		PageContent parentPage = new PageContent(parentLayout, parentContent);
-
 		parentPage.mergeChild(page);
 
 		// recursively inherit
