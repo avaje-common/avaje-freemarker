@@ -189,7 +189,7 @@ class HeadContent implements Tags {
   }
 
   private void parseVariables() {
-    content = MetaVariableReader.readAll(content, variables);
+    content = HeadVariableReader.readAll(content, variables);
   }
 
   private String getAttribute(String attribute, String breadContent) {

@@ -72,7 +72,7 @@ public class TemplateLoaderFactoryTests {
     assertThat(content).contains("<nav><#include \"/_layout/_docs_nav_mapping.ftl\"></nav>");
     assertThat(content).contains("<nav><#include \"/_layout/_docs_nav_mapping.ftl\"></nav>");
 
-    assertThat(content).contains("<h1 id=\"bread\"><a href=\"/docs\">Docs</a> / Mapping</h1>");
+    assertThat(content).contains("<h1 id=\"bread\"><a href=\"/docs\">Docs</a><span class=\"sep\">&nbsp;/&nbsp;</span><span class=\"last\">Mapping</span></h1>");
   }
 
   private void assertExpectedContent(String content) {

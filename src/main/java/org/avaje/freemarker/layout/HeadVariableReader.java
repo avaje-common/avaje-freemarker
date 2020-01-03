@@ -5,21 +5,20 @@ import java.util.Map;
 /**
  * Reads, extracts variables from the head meta section.
  */
-class MetaVariableReader {
+class HeadVariableReader {
 
   private final Map<String, String> variables;
   private String content;
-  private int endHead;
   private int start;
 
   private String elementStart = "<template id=\"";
   private String elementEnd = "</template>";
 
   static String readAll(String content, Map<String, String> variables) {
-    return new MetaVariableReader(content, variables).read();
+    return new HeadVariableReader(content, variables).read();
   }
 
-  MetaVariableReader(String content, Map<String, String> variables) {
+  HeadVariableReader(String content, Map<String, String> variables) {
     this.variables = variables;
     this.content = content;
   }
@@ -31,7 +30,6 @@ class MetaVariableReader {
   }
 
   private void readPositions() {
-    endHead = content.indexOf("</head>");
     start = content.indexOf(elementStart);
   }
 
@@ -43,7 +41,7 @@ class MetaVariableReader {
 
   void readVariables() {
     readPositions();
-    while (endHead > -1 && start > -1 && start < endHead) {
+    while (start > -1) {
       readVariable(start);
       readPositions();
     }

@@ -9,13 +9,13 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class MetaVariableReaderTest {
+public class HeadVariableReaderTest {
 
   @Test
   public void readTemplateVariables() throws IOException {
 
     Map<String, String> map = new LinkedHashMap<>();
-    MetaVariableReader.readAll(read("/templates/meta/meta1.html"), map);
+    HeadVariableReader.readAll(read("/templates/meta/meta1.html"), map);
 
     assertThat(map.get("foo")).isEqualTo("Hello");
     assertThat(map.get("bar").trim()).isEqualTo("Bar");
@@ -26,8 +26,9 @@ public class MetaVariableReaderTest {
   public void readVarVariables() throws IOException {
 
     Map<String, String> map = new LinkedHashMap<>();
-    MetaVariableReader.readAll(read("/templates/meta/var1.html"), map);
+    HeadVariableReader.readAll(read("/templates/meta/var1.html"), map);
 
+    assertThat(map.get("gitsource")).isEqualTo("https://github.com/avaje/config");
     assertThat(map.get("foo")).isEqualTo("Hello");
     assertThat(map.get("bar").trim()).isEqualTo("Bar");
     assertThat(map.get("notFound")).isNull();
