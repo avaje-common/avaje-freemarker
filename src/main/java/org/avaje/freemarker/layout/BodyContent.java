@@ -52,11 +52,11 @@ class BodyContent implements Tags {
       if (bodyTagAttributes != null) {
         sb.append(bodyTagAttributes);
       }
-      sb.append(">\n");
+      sb.append(">");
     }
     sb.append(bodyContent);
     if (withBody) {
-      sb.append("\n</body>\n</html>\n");
+      sb.append("</body>\n</html>\n");
     }
   }
 }

@@ -55,7 +55,7 @@ class RawTemplateInherit {
 	private String mergeContent(String encoding, PageContent page) throws IOException {
 		// there is page inheritance
 		String parentLayout = page.getParentLayout();
-		log.info("merge parentLayout {}", parentLayout);
+		log.trace("merge parentLayout {}", parentLayout);
 
 		String parentContent = templateSource.getSource(parentLayout, encoding);
 		PageContent parentPage = new PageContent(parentLayout, parentContent);

@@ -22,26 +22,28 @@ class HeadContent implements Tags {
   private static final String META_LAYOUT = "<meta name=\"layout\"";
   private static final String _END_TAG = ">";
   private static final String TAG_BREAD = "<meta name=\"bread";
-  private static final String META_ID_LAYOUT_HEAD = "<meta id=\"layout-head\"/>";
+  private static final String META_ID_LAYOUT_HEAD = "<meta id=\"layout-head\"";
 
   private List<String> lines = new ArrayList<>();
   private Map<String, String> variables = new LinkedHashMap<>();
   private Map<String, Crumb> bread = new LinkedHashMap<>();
 
+  private final String templateName;
   private final int headStart;
   private String content;
   private String title;
   private String parentLayout;
-  //  private String templateMetaContent;
   private int metaAddPosition = -1;
 
   private HeadContent() {
     this.headStart = -1;
+    this.templateName = "";
   }
 
-  public HeadContent(String content, int headStart) {
+  public HeadContent(String content, int headStart, String templateName) {
     this.headStart = headStart;
     this.content = content;
+    this.templateName = templateName;
     parseMetaContent();
     parseLines();
   }
@@ -72,7 +74,7 @@ class HeadContent implements Tags {
       if (headEnd == -1) {
         throw new RuntimeException("'" + _HEAD_END + "' tag not found in template[" + templateName + "] after position [" + headStart + "]");
       }
-      return new HeadContent(originalContent.substring(headStart + 6, headEnd), headStart);
+      return new HeadContent(originalContent.substring(headStart + 6, headEnd), headStart, templateName);
     }
   }
 
@@ -116,10 +118,7 @@ class HeadContent implements Tags {
     return true;
   }
 
-  private boolean readParentLayout(String line) {
-    if (parentLayout != null) {
-      return false;
-    }
+  boolean readParentLayout(String line) {
     final int pos = line.indexOf(META_LAYOUT);
     if (pos == -1) {
       return false;
@@ -127,6 +126,9 @@ class HeadContent implements Tags {
     int end = line.lastIndexOf(_END_TAG);
     if (end == -1) {
       throw new RuntimeException("'>' not found for <meta name=\"content\" in line [" + line + "]");
+    }
+    if (parentLayout != null) {
+      log.error("Duplicate meta layout in page " + templateName);
     }
     int tnStart = line.indexOf("content=", pos);
     if (tnStart == -1) {
@@ -229,7 +231,6 @@ class HeadContent implements Tags {
       return StringHelper.replaceString(pageContent, "$breadcrumb", "");
     }
 
-    log.info("content render ... crumbs {}", bread);
     final int size = bread.size();
     StringBuilder crumbs = new StringBuilder();
     for (int i = 0; i < size; i++) {

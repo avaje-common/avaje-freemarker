@@ -43,10 +43,6 @@ class PageContent {
 			headContent.render(sb);
 		}
     bodyContent.render(sb);
-//		final int end = bodyContent.end();
-//		if (end > originalContent.length()) {
-//			sb.append(originalContent.substring(end));
-//		}
 		return sb.toString();
 	}
 
